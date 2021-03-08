@@ -29,16 +29,18 @@ function table_build_section(rows, container_elem, row_elem, cell_elem) {
     row_container.className = row_elem.className;
 
     for (cell of row) {
-      let cell_container = document.createElement(cell_elem.name);
-      cell_container.className = cell_elem.className;
-      cell_container.colSpan = cell.colSpan || '1';
-
-      if (cell.elem)
-        cell_container.appendChild(cell.elem);
-      else
-        cell_container.appendChild(document.createTextNode(cell.text || cell));
-
-      row_container.appendChild(cell_container);
+      if(cell) {
+        let cell_container = document.createElement(cell_elem.name);
+        cell_container.className = cell_elem.className;
+        cell_container.colSpan = cell.colSpan || '1';
+  
+        if (cell.elem)
+          cell_container.appendChild(cell.elem);
+        else
+          cell_container.appendChild(document.createTextNode(cell.text || cell));
+  
+        row_container.appendChild(cell_container);
+      }
     }
 
     container.appendChild(row_container);

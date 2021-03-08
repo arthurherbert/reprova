@@ -4,7 +4,7 @@ run mkdir -p /root/reprova/
 
 workdir /root/reprova/
 
-add target/reprova.jar reprova.jar
+add ./target/reprova.jar reprova.jar
 
 expose 8080
 
