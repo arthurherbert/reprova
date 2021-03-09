@@ -1,7 +1,8 @@
 package br.ufmg.engsoft.reprova.model;
 
 import java.util.ArrayList;
-
+import org.bson.Document;
+import br.ufmg.engsoft.reprova.database.QuestionnairesDAO;
 import br.ufmg.engsoft.reprova.database.QuestionsDAO;
 import br.ufmg.engsoft.reprova.model.generator.QuestionnaireGeneration;
 import br.ufmg.engsoft.reprova.model.generator.EstimatedTimeCalculator;
@@ -171,4 +172,13 @@ public class Questionnaire{
 
     return builder.toString();
   }
+
+public Document doc(QuestionnairesDAO questionnairesDAO) {
+	ArrayList<Document> questions = questionnairesDAO.questions(this);
+	Document doc = new Document().append("averageDifficulty", this.averageDifficulty).append("questions", questions);
+	if (Environments.getInstance().getEnableEstimatedTime()) {
+		doc = doc.append("totalEstimatedTime", this.totalEstimatedTime);
+	}
+	return doc;
+}
 }

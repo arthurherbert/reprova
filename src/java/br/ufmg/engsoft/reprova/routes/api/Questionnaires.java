@@ -166,32 +166,6 @@ public class Questionnaires {
   }
 
   /**
-   * Helper function to build Question
-   *
-   */
-  private Question buildQuestion(Question question){
-    if (Environments.getInstance().getEnableEstimatedTime()){
-      return new Question.Builder()
-                    .theme(question.theme)
-                    .description(question.description)
-                    .statement(question.statement)
-                    .estimatedTime(question.estimatedTime)
-                    .record(question.record)
-                    .pvt(question.pvt)
-                    .build();
-    }
-
-    return new Question.Builder()
-                  .theme(question.theme)
-                  .description(question.description)
-                  .statement(question.statement)
-                  .record(question.record)
-                  .pvt(question.pvt)
-                  .build();
-  }
-  
-
-  /**
    * Post endpoint: add or update a questionnaire in the database.
    * The questionnaire must be supplied in the request's body.
    * If the questionnaire has an 'id' field, the operation is an update.
@@ -253,7 +227,7 @@ private void addQuestions(Questionnaire questionnaire) {
 
 
 private void addQuestion(Question question) {
-	question = buildQuestion(question);
+	question = question.buildQuestion();
 	questionsDAO.add(question);
 }
 

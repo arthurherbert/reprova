@@ -143,25 +143,13 @@ public class QuestionnairesDAO {
       throw new IllegalArgumentException("questionnaire mustn't be null");
     }
 
-    Document doc = doc(questionnaire);
+    Document doc = questionnaire.doc(this);
 	return this.upsertCollection(questionnaire, doc);
   }
 
 
 
-private Document doc(Questionnaire questionnaire) {
-	ArrayList<Document> questions = questions(questionnaire);
-	Document doc = new Document().append("averageDifficulty", questionnaire.averageDifficulty).append("questions",
-			questions);
-	if (Environments.getInstance().getEnableEstimatedTime()) {
-		doc = doc.append("totalEstimatedTime", questionnaire.totalEstimatedTime);
-	}
-	return doc;
-}
-
-
-
-private ArrayList<Document> questions(Questionnaire questionnaire) {
+public ArrayList<Document> questions(Questionnaire questionnaire) {
 	ArrayList<Document> questions = new ArrayList<Document>();
 	for (var question : questionnaire.questions) {
 		Document doc = this.createDoc(question);
@@ -171,7 +159,7 @@ private ArrayList<Document> questions(Questionnaire questionnaire) {
 }
 
   private Document createDoc(Question question) {
-	  Map<String, Object> record = record(question);
+	  Map<String, Object> record = question.record();
 	Document doc = new Document()
           .append("theme", question.theme)
           .append("description", question.description)
@@ -196,16 +184,7 @@ private ArrayList<Document> questions(Questionnaire questionnaire) {
 
 
 
-private Map<String, Object> record(Question question) {
-	Map<String, Object> record = null;
-	if (question.record != null) {
-		record = question.record.entrySet().stream()
-				.collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
-	}
-	return record;
-}
-  
-  private boolean upsertCollection(Questionnaire questionnaire, Document doc) {
+private boolean upsertCollection(Questionnaire questionnaire, Document doc) {
 	var id = questionnaire.id;
     if (id != null) {
       var result = this.collection.replaceOne(

@@ -6,7 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
+import java.util.stream.Collectors;
+import org.bson.Document;
 import br.ufmg.engsoft.reprova.model.difficulty.DifficultyFactory;
 
 /**
@@ -401,5 +402,56 @@ private double sum() {
 		}
 
 		return builder.toString();
+	}
+
+	/**
+	 * Helper function to build Question
+	 */
+	public Question buildQuestion() {
+		if (Environments.getInstance().getEnableEstimatedTime()) {
+			return new Question.Builder().theme(this.theme).description(this.description).statement(this.statement)
+					.estimatedTime(this.estimatedTime).record(this.record).pvt(this.pvt).build();
+		}
+		return new Question.Builder().theme(this.theme).description(this.description).statement(this.statement)
+				.record(this.record).pvt(this.pvt).build();
+	}
+
+	public Document createDoc() {
+		calculateDifficulty();
+		Map<String, Object> record = record2();
+		Document doc = new Document().append("theme", this.theme).append("description", this.description)
+				.append("statement", this.statement).append("record", record == null ? null : new Document(record))
+				.append("pvt", this.pvt);
+		if (Environments.getInstance().getEnableEstimatedTime()) {
+			doc = doc.append("estimatedTime", this.estimatedTime);
+		}
+		if (Environments.getInstance().getDifficultyGroup() != 0) {
+			doc = doc.append("difficulty", this.difficulty);
+		}
+		if (Environments.getInstance().getEnableMultipleChoice()) {
+			doc = doc.append("choices", getChoices());
+		}
+		if (Environments.getInstance().getEnableQuestionStatistics()) {
+			doc = doc.append("statistics", getStatistics());
+		}
+		return doc;
+	}
+
+	private Map<String, Object> record2() {
+		Map<String, Object> record = null;
+		if (this.record != null) {
+			record = this.record.entrySet().stream()
+					.collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+		}
+		return record;
+	}
+
+	public Map<String, Object> record() {
+		Map<String, Object> record = null;
+		if (this.record != null) {
+			record = this.record.entrySet().stream()
+					.collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+		}
+		return record;
 	}
 }
