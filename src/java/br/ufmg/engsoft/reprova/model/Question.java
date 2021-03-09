@@ -252,37 +252,60 @@ public class Question {
 
   /* Calculate Grades Average */
   private double calculateGradeAverage() {
-	  double acc = 0;
-	    for (Map.Entry<Semester, Map<String, Map<String, Float>>> entry : this.record.entrySet()) {
-	      double acc2 = 0;
-	      for (Map.Entry<String, Map<String, Float>> innerEntry : entry.getValue().entrySet()){
-	        acc2 += innerEntry.getValue().values().stream().mapToDouble(Float::doubleValue).average().orElse(0);
-	      }
-	      acc += acc2/entry.getValue().entrySet().size();
-	    }
-
-	    return acc/this.record.size();
+	  double acc = acc();
+	return acc/this.record.size();
   }
+
+private double acc() {
+	double acc = 0;
+	for (Map.Entry<Semester, Map<String, Map<String, Float>>> entry : this.record.entrySet()) {
+		double acc2 = acc2(entry);
+		acc += acc2 / entry.getValue().entrySet().size();
+	}
+	return acc;
+}
+
+private double acc2(Map.Entry<Semester, Map<String, Map<String, Float>>> entry) {
+	double acc2 = 0;
+	for (Map.Entry<String, Map<String, Float>> innerEntry : entry.getValue().entrySet()) {
+		acc2 += innerEntry.getValue().values().stream().mapToDouble(Float::doubleValue).average().orElse(0);
+	}
+	return acc2;
+}
   
   /* Calculate Grades Standard Deviation */
   private double calculateGradeStandardDeviation() {
-	  double average = this.calculateGradeAverage();
-	  double sum = 0.0;
-	  int qtdNotas = 0;
-	  
-	  for (Map.Entry<Semester, Map<String, Map<String, Float>>> entry : this.record.entrySet()) {
-	      for (Map.Entry<String, Map<String, Float>> innerEntry : entry.getValue().entrySet()){
-	        for(var notas: innerEntry.getValue().values()) {
-	        	sum += Math.pow(notas - average, 2);
-	        	qtdNotas++;
-	        }
-	      }
-	    }
-	  
-	  double stdDev = Math.sqrt(sum/(qtdNotas - 1));
+	  double sum = sum();
+	int qtdNotas = qtdNotas();
+	double stdDev = Math.sqrt(sum/(qtdNotas - 1));
 
 	  return stdDev;
   }
+
+private int qtdNotas() {
+	int qtdNotas = 0;
+	for (Map.Entry<Semester, Map<String, Map<String, Float>>> entry : this.record.entrySet()) {
+		for (Map.Entry<String, Map<String, Float>> innerEntry : entry.getValue().entrySet()) {
+			for (var notas : innerEntry.getValue().values()) {
+				qtdNotas++;
+			}
+		}
+	}
+	return qtdNotas;
+}
+
+private double sum() {
+	double average = this.calculateGradeAverage();
+	double sum = 0.0;
+	for (Map.Entry<Semester, Map<String, Map<String, Float>>> entry : this.record.entrySet()) {
+		for (Map.Entry<String, Map<String, Float>> innerEntry : entry.getValue().entrySet()) {
+			for (var notas : innerEntry.getValue().values()) {
+				sum += Math.pow(notas - average, 2);
+			}
+		}
+	}
+	return sum;
+}
   
   /* Calculate Grades Median */
   private double calculateGradeMedian() {

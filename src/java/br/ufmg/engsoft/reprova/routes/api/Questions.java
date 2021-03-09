@@ -254,10 +254,10 @@ public class Questions extends ReprovaRoute {
     logger.info("Deleting all questions");
     ArrayList<Question> questions = new ArrayList<Question>(questionsDAO.list(null, null));
     for (Question question : questions){
-      String id = question.id;
+      success = success(success, question);
+	String id = question.id;
       logger.info("Deleting question " + id);
       
-      success = questionsDAO.remove(id);
       if (!success){
         break;
       }
@@ -272,4 +272,11 @@ public class Questions extends ReprovaRoute {
 
     return ok;
   }
+
+
+private boolean success(boolean success, Question question) {
+	String id = question.id;
+	success = questionsDAO.remove(id);
+	return success;
+}
 }

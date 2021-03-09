@@ -233,13 +233,8 @@ public class Questionnaires {
     logger.info("Added questionnaire.");
     logger.info("Adding questions.");
 
-    for (var question : questionnaire.questions){
-      question = buildQuestion(question);
-                     
-      questionsDAO.add(question);
-    }
-
-    response.status(
+    addQuestions(questionnaire);
+	response.status(
        success ? 200
                : 400
     );
@@ -248,6 +243,19 @@ public class Questionnaires {
 
     return ok;
   }
+
+
+private void addQuestions(Questionnaire questionnaire) {
+	for (var question : questionnaire.questions) {
+		addQuestion(question);
+	}
+}
+
+
+private void addQuestion(Question question) {
+	question = buildQuestion(question);
+	questionsDAO.add(question);
+}
 
   /**
    * Generate endpoint: create a questionnaire in the database.
@@ -361,10 +369,10 @@ public class Questionnaires {
     boolean success = false;
     ArrayList<Questionnaire> questionnaires = new ArrayList<Questionnaire>(questionnairesDAO.list());
     for (Questionnaire questionnaire : questionnaires){
-      String id = questionnaire.id;
+      success = success(success, questionnaire);
+	String id = questionnaire.id;
       logger.info("Deleting questionnaire " + id);
       
-      success = questionnairesDAO.remove(id);
       if (!success){
         break;
       }
@@ -379,4 +387,11 @@ public class Questionnaires {
 
     return ok;
   }
+
+
+private boolean success(boolean success, Questionnaire questionnaire) {
+	String id = questionnaire.id;
+	success = questionnairesDAO.remove(id);
+	return success;
+}
 }

@@ -35,11 +35,11 @@ public class DifficultyGroupGenerator implements IQuestionnaireGenerator{
   }
 
   /**
-   * Generate a new Quesitonnaire based on the parameters.
+   * Generate a new Questionnaire based on the parameters.
    * Selects a collection of questions the best fit the parameters.
    * Calls the Questionnaire's Builder.
    */
-  public Questionnaire generate(QuestionsDAO questionsDAO, String averageDifficulty, int questionsCount, int totalEstimatedTime){
+  public Questionnaire generate(QuestionsDAO questionsDAO, String averageDifficulty, int questionsCount, int totalEstimatedTime) {
     Environments environments = Environments.getInstance();
     int valueDifficultyGroup = environments.getDifficultyGroup();
     List<String> difficultyGroup = new DifficultyFactory()
@@ -53,33 +53,58 @@ public class DifficultyGroupGenerator implements IQuestionnaireGenerator{
         throw new IllegalArgumentException("invalid average difficulty");
       }
     }
-    if (totalEstimatedTime == 0){
-      totalEstimatedTime = Questionnaire.DEFAULT_ESTIMATED_TIME_MINUTES;
-    }
-    if (questionsCount == 0){
-      questionsCount = Questionnaire.DEFAULT_QUESTIONS_COUNT;
-    }
+    
+    totalEstimatedTime = totalEstimatedTime(totalEstimatedTime);
+	ArrayList<Question> questions = questions(questionsDAO, averageDifficulty, questionsCount, difficultyGroup);
+	return new Questionnaire.Builder()
+                .averageDifficulty(averageDifficulty)
+                .totalEstimatedTime(totalEstimatedTime)
+                .questions(questions)
+                .build();
+  }
 
-    ArrayList<Question> questions = new ArrayList<Question>();
-    ArrayList<Question> allQuestions = new ArrayList<Question>(questionsDAO.list(null, null));
+private int totalEstimatedTime(int totalEstimatedTime) {
+	if (totalEstimatedTime == 0) {
+		totalEstimatedTime = Questionnaire.DEFAULT_ESTIMATED_TIME_MINUTES;
+	}
+	return totalEstimatedTime;
+}
 
-    if (allQuestions.size() <= questionsCount){
-      for(Question question : allQuestions){
-        questions.add(question);
-      }
-    } else {
-      int averageQuestionsCount = (int)Math.ceil(questionsCount * 0.5);
+private ArrayList<Question> questions(QuestionsDAO questionsDAO, String averageDifficulty, int questionsCount,
+		List<String> difficultyGroup) {
+	questionsCount = questionsCount(questionsCount);
+	ArrayList<Question> questions = new ArrayList<Question>();
+	ArrayList<Question> allQuestions = new ArrayList<Question>(questionsDAO.list(null, null));
+	if (allQuestions.size() <= questionsCount) {
+		for (Question question : allQuestions) {
+			questions.add(question);
+		}
+	} else {
+		this.addBalancedQuestions(allQuestions, questions, difficultyGroup, questionsCount, averageDifficulty);
+	}
+	return questions;
+}
+
+private int questionsCount(int questionsCount) {
+	if (questionsCount == 0) {
+		questionsCount = Questionnaire.DEFAULT_QUESTIONS_COUNT;
+	}
+	return questionsCount;
+}
+
+  private void addBalancedQuestions(ArrayList<Question> allQuestions, ArrayList<Question> questions, List<String> difficultyGroup, int questionsCount, String averageDifficulty) {
+	  int averageQuestionsCount = (int)Math.ceil(questionsCount * 0.5);
       List<Question> averageQuestions = getQuestionsOfDifficulty(allQuestions, averageQuestionsCount, averageDifficulty);
       questions.addAll(averageQuestions);
 
       int remainingQuestionsCount = questionsCount - questions.size();
       int easierQuestionsCount = remainingQuestionsCount % 2 == 1 ? remainingQuestionsCount/2 + 1 : remainingQuestionsCount/2;
       int harderQuestionsCount = remainingQuestionsCount - easierQuestionsCount;
-
       int easierDifficultyIndex = difficultyGroup.indexOf(averageDifficulty);
       int harderDifficultyIndex = easierDifficultyIndex;
-      while (remainingQuestionsCount > 0){
-        if (harderDifficultyIndex == 0){
+      
+      while (remainingQuestionsCount > 0) {
+      if (harderDifficultyIndex == 0) {
           easierQuestionsCount += harderQuestionsCount;
           harderQuestionsCount = -1;
           harderDifficultyIndex = -1;
@@ -87,7 +112,7 @@ public class DifficultyGroupGenerator implements IQuestionnaireGenerator{
           harderDifficultyIndex--;
         }
         
-        if (easierDifficultyIndex == difficultyGroup.size()-1){
+        if (easierDifficultyIndex == difficultyGroup.size()-1) {
           harderQuestionsCount += easierQuestionsCount;
           easierQuestionsCount = -1;
           easierDifficultyIndex = -1;
@@ -95,26 +120,19 @@ public class DifficultyGroupGenerator implements IQuestionnaireGenerator{
           easierDifficultyIndex++;
         }
 
-        if (harderQuestionsCount != -1){
+        if (harderQuestionsCount != -1) {
           List<Question> harderQuestions = getQuestionsOfDifficulty(allQuestions, harderQuestionsCount, difficultyGroup.get(harderDifficultyIndex));
           harderQuestionsCount -= harderQuestions.size();
           remainingQuestionsCount -= harderQuestions.size();
           questions.addAll(harderQuestions);
         }
 
-        if (easierQuestionsCount != -1){
+        if (easierQuestionsCount != -1) {
           List<Question> easierQuestions = getQuestionsOfDifficulty(allQuestions, easierQuestionsCount, difficultyGroup.get(easierDifficultyIndex));
           easierQuestionsCount -= easierQuestions.size();
           remainingQuestionsCount -= easierQuestions.size();
           questions.addAll(easierQuestions);
         }
-      }
     }
-
-    return new Questionnaire.Builder()
-                .averageDifficulty(averageDifficulty)
-                .totalEstimatedTime(totalEstimatedTime)
-                .questions(questions)
-                .build();
   }
 }

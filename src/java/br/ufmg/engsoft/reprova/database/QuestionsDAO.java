@@ -156,7 +156,13 @@ public class QuestionsDAO {
             throw new IllegalArgumentException("question mustn't be null");
         }
 
-        question.calculateDifficulty();
+        Document doc = this.createDoc(question);
+
+        return this.upsertCollection(question, doc);
+    }
+    
+    private Document createDoc(Question question) {
+    	question.calculateDifficulty();
         Map<String, Object> record = null;
         if (question.record != null) {
             record = question.record // Convert the keys to string,
@@ -185,8 +191,11 @@ public class QuestionsDAO {
         if (Environments.getInstance().getEnableQuestionStatistics()) {
             doc = doc.append("statistics", question.getStatistics());
         }
-
-        var id = question.id;
+        return doc;
+    }
+    
+    private boolean upsertCollection(Question question, Document doc) {
+    	var id = question.id;
         if (id != null) {
             var result = this.collection.replaceOne(eq(new ObjectId(id)), doc);
 

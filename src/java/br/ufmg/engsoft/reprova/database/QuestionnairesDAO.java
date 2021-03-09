@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import br.ufmg.engsoft.reprova.mime.json.Json;
 import br.ufmg.engsoft.reprova.model.Environments;
+import br.ufmg.engsoft.reprova.model.Question;
 import br.ufmg.engsoft.reprova.model.Questionnaire;
 
 
@@ -142,22 +143,36 @@ public class QuestionnairesDAO {
       throw new IllegalArgumentException("questionnaire mustn't be null");
     }
 
-    ArrayList<Document> questions = new ArrayList<Document>();
-    for (var question : questionnaire.questions){
-      Map<String, Object> record = null;
-      if (question.record != null){
-        record = question.record // Convert the keys to string,
-        .entrySet()                                // and values to object.
-        .stream()
-        .collect(
-          Collectors.toMap(
-            e -> e.getKey().toString(),
-            Map.Entry::getValue
-          )
-        );
-      }
-          
-      Document doc = new Document()
+    Document doc = doc(questionnaire);
+	return this.upsertCollection(questionnaire, doc);
+  }
+
+
+
+private Document doc(Questionnaire questionnaire) {
+	ArrayList<Document> questions = questions(questionnaire);
+	Document doc = new Document().append("averageDifficulty", questionnaire.averageDifficulty).append("questions",
+			questions);
+	if (Environments.getInstance().getEnableEstimatedTime()) {
+		doc = doc.append("totalEstimatedTime", questionnaire.totalEstimatedTime);
+	}
+	return doc;
+}
+
+
+
+private ArrayList<Document> questions(Questionnaire questionnaire) {
+	ArrayList<Document> questions = new ArrayList<Document>();
+	for (var question : questionnaire.questions) {
+		Document doc = this.createDoc(question);
+		questions.add(doc);
+	}
+	return questions;
+}
+
+  private Document createDoc(Question question) {
+	  Map<String, Object> record = record(question);
+	Document doc = new Document()
           .append("theme", question.theme)
           .append("description", question.description)
           .append("statement", question.statement)
@@ -176,18 +191,22 @@ public class QuestionnairesDAO {
         doc = doc.append("difficulty", question.difficulty);
       }
       
-      questions.add(doc);
-    }
+      return doc;
+  }
 
-    Document doc = new Document()
-        .append("averageDifficulty", questionnaire.averageDifficulty)
-        .append("questions", questions);
 
-    if (Environments.getInstance().getEnableEstimatedTime()){
-      doc = doc.append("totalEstimatedTime", questionnaire.totalEstimatedTime);
-    }
-    
-    var id = questionnaire.id;
+
+private Map<String, Object> record(Question question) {
+	Map<String, Object> record = null;
+	if (question.record != null) {
+		record = question.record.entrySet().stream()
+				.collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue));
+	}
+	return record;
+}
+  
+  private boolean upsertCollection(Questionnaire questionnaire, Document doc) {
+	var id = questionnaire.id;
     if (id != null) {
       var result = this.collection.replaceOne(
         eq(new ObjectId(id)),
@@ -203,11 +222,9 @@ public class QuestionnairesDAO {
       this.collection.insertOne(doc);
 
     logger.info("Stored questionnaire " + doc.get("_id"));
-
     return true;
   }
-
-
+  
   /**
    * Remove the questionnaire with the given id from the collection.
    * @param id  the questionnaire id
